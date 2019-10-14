@@ -5,31 +5,32 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
 import androidx.navigation.Navigation
-import com.bumptech.glide.Glide
 import com.dolan.arif.dncatapp.R
-import com.dolan.arif.dncatapp.utlis.getProgressDrawable
-import com.dolan.arif.dncatapp.utlis.loadImage
+import com.dolan.arif.dncatapp.databinding.FragmentDetailBinding
 import com.dolan.arif.dncatapp.viewmodel.CatDetailViewModel
 import kotlinx.android.synthetic.main.fragment_detail.*
 
-class DetailFragment : Fragment() {
+class DetailFragment : Fragment(), CatDetailListener {
 
     private lateinit var catDetailViewModel: CatDetailViewModel
+    private lateinit var dataBinding: FragmentDetailBinding
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        return inflater.inflate(R.layout.fragment_detail, container, false)
+        dataBinding = DataBindingUtil.inflate(inflater,R.layout.fragment_detail,container,false)
+        return dataBinding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
+        dataBinding.listener = this
         arguments?.let {
             val uuid = DetailFragmentArgs.fromBundle(it).uuid
             catDetailViewModel = ViewModelProviders.of(this).get(CatDetailViewModel::class.java)
@@ -37,25 +38,21 @@ class DetailFragment : Fragment() {
         }
 
         showData()
+    }
 
-        btn_list.setOnClickListener {
-            val action = DetailFragmentDirections.actionListFragment()
-            Navigation.findNavController(it).navigate(action)
-        }
+    override fun onBackClicked(v : View) {
+        val action = DetailFragmentDirections.actionListFragment()
+        Navigation.findNavController(v).navigate(action)
     }
 
     private fun showData() {
         catDetailViewModel.cat.observe(this, Observer { cat ->
-            cat?.let {
-                img_poster.loadImage(it.url, getProgressDrawable(context!!))
-                txt_title.text = it.name
-                txt_detail.text = it.temperament
-            }
+            dataBinding.catModel = cat
         })
 
-        catDetailViewModel.isLoading.observe(this, Observer {isLoading ->
+        catDetailViewModel.isLoading.observe(this, Observer { isLoading ->
             isLoading?.let {
-                progress_main.visibility = if(it) View.VISIBLE else View.GONE
+                progress_main.visibility = if (it) View.VISIBLE else View.GONE
             }
         })
     }
